@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Style Converter API Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        textarea {
+            width: 100%;
+            height: 100px;
+            margin: 10px 0;
+            padding: 10px;
+            font-size: 14px;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+        }
+        .result {
+            background: #f0f0f0;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .error {
+            background: #ffebee;
+            color: #c62828;
+        }
+        .success {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+    </style>
+</head>
+<body>
+    <h1>Style Converter API Test</h1>
+
+    <textarea id="testInput" placeholder="Enter text to test...">This is a test sentence to check if the style converter is working properly.</textarea>
+
+    <div>
+        <button onclick="testStyle('academic')">Test Academic</button>
+        <button onclick="testStyle('casual')">Test Casual</button>
+        <button onclick="testStyle('professional')">Test Professional</button>
+        <button onclick="testStyle('creative')">Test Creative</button>
+        <button onclick="testStyle('technical')">Test Technical</button>
+        <button onclick="testStyle('persuasive')">Test Persuasive</button>
+        <button onclick="testStyle('simplified')">Test Simplified</button>
+    </div>
+
+    <div id="output"></div>
+
+    <script>
+        async function testStyle(style) {
+            const text = document.getElementById('testInput').value;
+            const output = document.getElementById('output');
+
+            output.innerHTML = `<div class="result">Testing ${style} style... Please wait...</div>`;
+
+            try {
+                console.log('Testing style:', style);
+                console.log('Text:', text);
+
+                const response = await fetch('/api/style/convert', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ text, style })
+                });
+
+                console.log('Response status:', response.status);
+                console.log('Response headers:', response.headers);
+
+                const result = await response.json();
+                console.log('Result:', result);
+
+                if (result.success) {
+                    output.innerHTML = `
+                        <div class="result success">
+                            <h3>✅ Success - ${style} style</h3>
+                            <p><strong>Original:</strong> ${result.original}</p>
+                            <p><strong>Converted:</strong> ${result.converted}</p>
+                            <p><strong>Method:</strong> ${result.method}</p>
+                            <p><strong>Character change:</strong> ${result.characterChange}</p>
+                        </div>
+                    `;
+                } else {
+                    output.innerHTML = `
+                        <div class="result error">
+                            <h3>❌ Error - ${style} style</h3>
+                            <p><strong>Error:</strong> ${result.error}</p>
+                            <p><strong>Details:</strong> ${result.details || 'N/A'}</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Fetch error:', error);
+                output.innerHTML = `
+                    <div class="result error">
+                        <h3>❌ Network Error</h3>
+                        <p><strong>Error:</strong> ${error.message}</p>
+                        <p>Check the browser console for more details.</p>
+                    </div>
+                `;
+            }
+        }
+
+        console.log('Style Converter API Test page loaded');
+        console.log('Open this page at: http://localhost:3000/test-style-api.html');
+    </script>
+</body>
+</html>
