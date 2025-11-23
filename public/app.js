@@ -347,11 +347,18 @@ tabBtns.forEach(btn => {
   btn.addEventListener('click', () => {
     const tabName = btn.dataset.tab;
 
+    // Remove active from all tabs and hide them
     tabBtns.forEach(b => b.classList.remove('active'));
-    tabContents.forEach(c => c.classList.remove('active'));
+    tabContents.forEach(c => {
+      c.classList.remove('active');
+      c.style.display = 'none';
+    });
 
+    // Activate clicked tab and show it
     btn.classList.add('active');
-    document.getElementById(tabName).classList.add('active');
+    const activeTab = document.getElementById(tabName);
+    activeTab.classList.add('active');
+    activeTab.style.display = 'block';
   });
 });
 
