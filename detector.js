@@ -196,7 +196,13 @@ BE HARSH. If you see AI patterns, call them out. Respond ONLY with the JSON obje
         }]
       });
 
-      const responseText = message.content[0].text;
+      let responseText = message.content[0].text.trim();
+
+      // Strip markdown code blocks if present (```json ... ``` or ``` ... ```)
+      if (responseText.startsWith('```')) {
+        responseText = responseText.replace(/^```(?:json)?\s*\n?/, '').replace(/\n?```\s*$/, '');
+      }
+
       const analysis = JSON.parse(responseText);
 
       return {

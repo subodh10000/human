@@ -68,7 +68,13 @@ Respond ONLY with the JSON object, no other text.`
         }]
       });
 
-      const responseText = message.content[0].text;
+      let responseText = message.content[0].text.trim();
+
+      // Strip markdown code blocks if present
+      if (responseText.startsWith('```')) {
+        responseText = responseText.replace(/^```(?:json)?\s*\n?/, '').replace(/\n?```\s*$/, '');
+      }
+
       const result = JSON.parse(responseText);
 
       return {
