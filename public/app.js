@@ -178,6 +178,19 @@ function displayFullResults(result) {
     // Display converted text
     outputText.textContent = result.converted.text;
 
+    // Display detected style if available
+    if (result.converted.detectedStyle) {
+        const styleIndicator = document.createElement('div');
+        styleIndicator.style.cssText = 'background: #667eea; color: white; padding: 8px 15px; border-radius: 8px; margin-bottom: 15px; font-size: 0.9rem; display: inline-block;';
+        styleIndicator.innerHTML = `📝 Detected Style: <strong>${result.converted.detectedStyle.charAt(0).toUpperCase() + result.converted.detectedStyle.slice(1)}</strong> (preserved)`;
+
+        // Insert before the output text
+        if (outputText.previousElementSibling?.style?.cssText?.includes('background: #667eea')) {
+            outputText.previousElementSibling.remove(); // Remove old indicator
+        }
+        outputText.parentElement.insertBefore(styleIndicator, outputText);
+    }
+
     // Display converted detection
     updateDetectionDisplay('converted', result.converted.detection);
 

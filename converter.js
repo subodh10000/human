@@ -65,6 +65,39 @@ class AIToHumanConverter {
   }
 
   /**
+   * Detect the writing style of the text
+   * @param {string} text - Text to analyze
+   * @returns {string} - Detected style (academic, professional, casual, technical, creative)
+   */
+  async detectWritingStyle(text) {
+    if (!this.anthropic) {
+      return 'professional'; // Default fallback
+    }
+
+    try {
+      const message = await this.anthropic.messages.create({
+        model: this.model,
+        max_tokens: 100,
+        messages: [{
+          role: 'user',
+          content: `Analyze the writing style of this text and classify it as ONE of these: academic, professional, casual, technical, creative, persuasive.
+
+Text: """${text.substring(0, 500)}"""
+
+Respond with ONLY the single word classification, nothing else.`
+        }]
+      });
+
+      const style = message.content[0].text.trim().toLowerCase();
+      const validStyles = ['academic', 'professional', 'casual', 'technical', 'creative', 'persuasive'];
+      return validStyles.includes(style) ? style : 'professional';
+    } catch (error) {
+      console.error('Style detection error:', error.message);
+      return 'professional';
+    }
+  }
+
+  /**
    * Claude API-based conversion (most accurate and natural)
    * @param {string} text - AI-generated text to convert
    * @param {number} intensity - Conversion intensity (1-10)
@@ -75,17 +108,50 @@ class AIToHumanConverter {
       throw new Error('Claude API client not initialized');
     }
 
+    // Detect the original writing style
+    const detectedStyle = await this.detectWritingStyle(text);
+
+    const styleGuidelines = {
+      academic: `- Maintain scholarly, formal tone
+- Keep academic vocabulary and terminology
+- Preserve citation-ready format
+- Use complete sentences and proper grammar
+- Remove only the most obvious AI phrases
+- Keep the professional academic voice`,
+      professional: `- Maintain business-appropriate tone
+- Keep professional vocabulary
+- Use clear, concise language
+- Preserve workplace communication standards
+- Add subtle natural touches without being too casual`,
+      casual: `- Use casual, conversational language
+- Add contractions freely
+- Use simpler vocabulary
+- Make it relaxed and friendly`,
+      technical: `- Maintain technical precision and terminology
+- Keep formal structure for documentation
+- Preserve accuracy and clarity
+- Remove AI fluff while keeping technical rigor`,
+      creative: `- Keep the engaging, expressive style
+- Maintain storytelling elements
+- Preserve descriptive language
+- Add more personality and flair`,
+      persuasive: `- Maintain compelling, convincing tone
+- Keep persuasive elements
+- Preserve emotional appeals
+- Add natural human conviction`
+    };
+
     const intensityDescriptions = {
-      1: 'minimal changes, keep it very formal and professional',
-      2: 'slight humanization, mostly formal',
-      3: 'light humanization, professional tone',
+      1: 'minimal changes, preserve almost all formality',
+      2: 'very subtle humanization',
+      3: 'light humanization, maintain style',
       4: 'moderate humanization, balanced',
-      5: 'noticeable humanization, friendly tone',
-      6: 'strong humanization, conversational',
-      7: 'very natural, casual and conversational',
-      8: 'highly casual, very human-like',
-      9: 'extremely casual, informal',
-      10: 'maximum casualness, very relaxed and informal'
+      5: 'noticeable humanization',
+      6: 'strong humanization',
+      7: 'very natural humanization',
+      8: 'highly natural',
+      9: 'extremely natural',
+      10: 'maximum naturalness while preserving style'
     };
 
     try {
@@ -94,27 +160,30 @@ class AIToHumanConverter {
         max_tokens: 4096,
         messages: [{
           role: 'user',
-          content: `Rewrite the following text to sound more natural and human-written, NOT AI-generated.
+          content: `Rewrite this text to sound more natural and human-written, NOT AI-generated, while PRESERVING the ${detectedStyle} writing style.
 
 Intensity level: ${intensity}/10 (${intensityDescriptions[intensity]})
 
-Guidelines for humanization:
-- Replace formal AI phrases with casual, natural language
-- Add contractions (it's, don't, can't, etc.)
-- Vary sentence structure and length
-- Use simpler, more conversational vocabulary
-- Add natural flow and rhythm
-- Remove overly perfect grammar where appropriate
-- Make it sound like a real person wrote it
-- At higher intensities, add more personality and casual expressions
+CRITICAL: The original text is in ${detectedStyle.toUpperCase()} style. You MUST maintain this style while making it sound human.
+
+Style-specific guidelines:
+${styleGuidelines[detectedStyle]}
+
+General humanization rules:
+- Remove robotic AI phrases like "it is important to note", "delve into", "leverage", "paradigm"
+- Vary sentence structure naturally
+- Add natural flow and rhythm appropriate for this style
+- Remove AI-generated perfection and templates
+- Make it sound like a real ${detectedStyle} writer wrote it
 - Keep the core meaning and information intact
+- At higher intensities, add more natural human touches while staying in ${detectedStyle} style
 
 Original text:
 """
 ${text}
 """
 
-Respond with ONLY the humanized text, no explanations or meta-commentary.`
+Respond with ONLY the humanized text in the SAME ${detectedStyle} style, no explanations.`
         }]
       });
 
@@ -129,7 +198,9 @@ Respond with ONLY the humanized text, no explanations or meta-commentary.`
         changes,
         success: true,
         humanization: Math.min(85 + intensity * 1.3, 98),
-        method: 'claude-api'
+        method: 'claude-api',
+        detectedStyle: detectedStyle,
+        stylePreserved: true
       };
     } catch (error) {
       console.error('Claude API conversion error:', error.message);
