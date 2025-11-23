@@ -141,6 +141,118 @@
                 <p class="loading-text">Processing your text...</p>
             </div>
         </div>
+        </div>
+
+        <!-- Tab 2: Grammar Checker -->
+        <div class="tab-content" id="grammar" style="display: none;">
+            <div class="section">
+                <div class="section-header">
+                    <h2>Grammar Checker</h2>
+                    <span class="char-count" id="grammarCharCount">0 characters</span>
+                </div>
+                <textarea
+                    id="grammarInput"
+                    class="text-area"
+                    placeholder="Paste your text here to check grammar, spelling, and punctuation..."
+                    rows="12"
+                ></textarea>
+
+                <div class="button-group">
+                    <button id="grammarCheckBtn" class="btn btn-primary">
+                        <span class="btn-icon">✍️</span> Check Grammar
+                    </button>
+                    <button id="grammarFixBtn" class="btn btn-secondary">
+                        <span class="btn-icon">⚡</span> Quick Fix
+                    </button>
+                    <button id="grammarClearBtn" class="btn btn-clear">
+                        <span class="btn-icon">🗑️</span> Clear
+                    </button>
+                </div>
+            </div>
+
+            <!-- Grammar Results -->
+            <div class="section" id="grammarResults" style="display: none;">
+                <h3>Grammar Check Results</h3>
+                <div id="grammarOutput"></div>
+            </div>
+        </div>
+
+        <!-- Tab 3: Style Converter -->
+        <div class="tab-content" id="style" style="display: none;">
+            <div class="section">
+                <div class="section-header">
+                    <h2>Style Converter</h2>
+                    <span class="char-count" id="styleCharCount">0 characters</span>
+                </div>
+                <textarea
+                    id="styleInput"
+                    class="text-area"
+                    placeholder="Paste your text here to convert to different writing styles..."
+                    rows="12"
+                ></textarea>
+
+                <div class="style-selector">
+                    <h3>Select Writing Style:</h3>
+                    <div class="style-grid">
+                        <button class="style-card" data-style="academic">
+                            <span class="style-icon">📚</span>
+                            <span class="style-name">Academic</span>
+                            <span class="style-desc">Formal, scholarly</span>
+                        </button>
+                        <button class="style-card" data-style="casual">
+                            <span class="style-icon">💬</span>
+                            <span class="style-name">Casual</span>
+                            <span class="style-desc">Friendly, conversational</span>
+                        </button>
+                        <button class="style-card" data-style="professional">
+                            <span class="style-icon">💼</span>
+                            <span class="style-name">Professional</span>
+                            <span class="style-desc">Business-appropriate</span>
+                        </button>
+                        <button class="style-card" data-style="creative">
+                            <span class="style-icon">🎭</span>
+                            <span class="style-name">Creative</span>
+                            <span class="style-desc">Engaging, expressive</span>
+                        </button>
+                        <button class="style-card" data-style="technical">
+                            <span class="style-icon">🔧</span>
+                            <span class="style-name">Technical</span>
+                            <span class="style-desc">Precise, clear</span>
+                        </button>
+                        <button class="style-card" data-style="persuasive">
+                            <span class="style-icon">🎯</span>
+                            <span class="style-name">Persuasive</span>
+                            <span class="style-desc">Compelling, convincing</span>
+                        </button>
+                        <button class="style-card" data-style="simplified">
+                            <span class="style-icon">📖</span>
+                            <span class="style-name">Simplified</span>
+                            <span class="style-desc">Easy to understand</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button id="convertStyleBtn" class="btn btn-primary" disabled>
+                        <span class="btn-icon">🎨</span> Convert Style
+                    </button>
+                    <button id="styleClearBtn" class="btn btn-clear">
+                        <span class="btn-icon">🗑️</span> Clear
+                    </button>
+                </div>
+            </div>
+
+            <!-- Style Results -->
+            <div class="section" id="styleResults" style="display: none;">
+                <div class="section-header">
+                    <h3 id="styleResultTitle">Converted Text</h3>
+                    <button id="styleCopyBtn" class="btn btn-small btn-copy">
+                        <span class="btn-icon">📋</span> Copy
+                    </button>
+                </div>
+                <div class="text-display" id="styleOutput"></div>
+            </div>
+        </div>
 
         <!-- How It Works Section -->
         <div class="info-section">

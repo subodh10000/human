@@ -527,3 +527,176 @@ footer {
 ::-webkit-scrollbar-thumb:hover {
     background: #764ba2;
 }
+
+/* Tabs */
+.tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 30px;
+    flex-wrap: wrap;
+}
+
+.tab-btn {
+    background: white;
+    border: 2px solid #e0e0e0;
+    padding: 15px 25px;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    min-width: 150px;
+    justify-content: center;
+}
+
+.tab-btn:hover {
+    background: #f8f9fa;
+    transform: translateY(-2px);
+}
+
+.tab-btn.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-color: #667eea;
+}
+
+.tab-icon {
+    font-size: 1.2rem;
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+    animation: fadeIn 0.5s;
+}
+
+/* Style Selector */
+.style-selector {
+    margin: 30px 0;
+}
+
+.style-selector h3 {
+    color: #667eea;
+    margin-bottom: 20px;
+}
+
+.style-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+.style-card {
+    background: #f8f9fa;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 20px;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.style-card:hover {
+    background: white;
+    border-color: #667eea;
+    transform: translateY(-3px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+}
+
+.style-card.selected {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-color: #667eea;
+}
+
+.style-icon {
+    font-size: 2rem;
+}
+
+.style-name {
+    font-weight: 700;
+    font-size: 1.1rem;
+}
+
+.style-desc {
+    font-size: 0.85rem;
+    opacity: 0.8;
+}
+
+.style-card.selected .style-desc {
+    opacity: 1;
+}
+
+/* Grammar Output */
+#grammarOutput {
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 12px;
+    line-height: 1.8;
+}
+
+.grammar-issue {
+    background: #fff3cd;
+    border-left: 4px solid #ffc107;
+    padding: 15px;
+    margin-bottom: 15px;
+    border-radius: 8px;
+}
+
+.grammar-issue-type {
+    font-weight: 700;
+    color: #856404;
+    text-transform: capitalize;
+}
+
+.grammar-original {
+    text-decoration: line-through;
+    color: #dc3545;
+}
+
+.grammar-correction {
+    color: #28a745;
+    font-weight: 600;
+}
+
+.grammar-explanation {
+    font-size: 0.9rem;
+    color: #666;
+    margin-top: 8px;
+}
+
+.corrected-text {
+    background: #d4edda;
+    border: 2px solid #28a745;
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    white-space: pre-wrap;
+}
+
+/* Responsive for tabs */
+@media (max-width: 768px) {
+    .tabs {
+        flex-direction: column;
+    }
+
+    .tab-btn {
+        width: 100%;
+        min-width: auto;
+    }
+
+    .style-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
