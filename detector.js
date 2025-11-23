@@ -9,24 +9,48 @@ class AITextDetector {
     this.anthropic = anthropicClient;
     this.model = process.env.CLAUDE_MODEL || 'claude-sonnet-4-5-20250929';
     this.enableFallback = process.env.ENABLE_FALLBACK !== 'false';
-    // Common AI phrases and patterns
+    // Common AI phrases and patterns (EXPANDED FOR BETTER DETECTION)
     this.aiPhrases = [
+      // Classic AI transitions
       'it is important to note',
       'it is worth noting',
+      'it should be noted',
       'furthermore',
       'moreover',
+      'in addition',
+      'additionally',
+      'consequently',
+      'therefore',
+      'thus',
+      'hence',
+      'nevertheless',
+      'nonetheless',
+
+      // AI conclusions
       'in conclusion',
       'to summarize',
       'in summary',
+      'to sum up',
+      'in summation',
+      'to conclude',
+      'ultimately',
+      'in essence',
+
+      // AI action verbs
       'delve into',
       'dive into',
-      'it\'s important to understand',
+      'explore further',
+      'examine closely',
+      'shed light on',
+      'unpack',
+      'dissect',
+
+      // Overused AI words
       'comprehensive',
       'leverage',
       'utilize',
       'facilitate',
-      'in today\'s digital age',
-      'in this day and age',
+      'implement',
       'revolutionize',
       'game-changer',
       'cutting-edge',
@@ -37,13 +61,56 @@ class AITextDetector {
       'optimize',
       'enhance',
       'empower',
-      'embark on',
-      'journey',
+      'enable',
+      'foster',
+      'cultivate',
+      'harness',
+
+      // AI clichés
+      'in today\'s digital age',
+      'in this day and age',
+      'in today\'s world',
+      'in modern society',
+      'in the digital era',
+      'embark on a journey',
+      'journey towards',
       'landscape',
       'ecosystem',
-      'holistic',
+      'holistic approach',
+      'paradigm shift',
       'paradigm',
-      'multifaceted'
+      'multifaceted',
+      'nuanced',
+      'tapestry',
+      'spectrum',
+
+      // AI certainty phrases
+      'it\'s important to understand',
+      'it\'s crucial to',
+      'it\'s essential to',
+      'it\'s vital to',
+      'it goes without saying',
+      'needless to say',
+
+      // AI qualifying phrases
+      'a myriad of',
+      'a plethora of',
+      'an array of',
+      'a variety of',
+      'a range of',
+      'a multitude of',
+
+      // AI business jargon
+      'synergy',
+      'stakeholders',
+      'touch base',
+      'circle back',
+      'leverage synergies',
+      'value proposition',
+      'low-hanging fruit',
+      'paradigm shift',
+      'think outside the box',
+      'move the needle'
     ];
 
     this.aiPatterns = {
@@ -71,30 +138,61 @@ class AITextDetector {
         max_tokens: 1024,
         messages: [{
           role: 'user',
-          content: `Analyze the following text and determine if it was written by AI or a human.
+          content: `You are an expert AI text detector. Analyze the following text with EXTREME scrutiny to determine if it was written by AI (like ChatGPT, Claude, GPT-4, etc.) or a human.
 
-Consider these factors:
-- Writing style and tone
-- Sentence structure patterns
-- Vocabulary choices
-- Natural imperfections or lack thereof
-- Common AI phrases and patterns
-- Coherence and flow
+BE VERY CRITICAL. AI-generated text has these telltale signs:
 
-Provide your analysis in this exact JSON format:
-{
-  "isAI": true/false,
-  "confidence": <number 0-100>,
-  "reasoning": "<brief explanation>",
-  "keyIndicators": ["<indicator1>", "<indicator2>", ...]
-}
+🚨 STRONG AI INDICATORS (if present, likely 80-100% AI):
+- Overuse of transition words: "furthermore," "moreover," "however," "therefore"
+- Phrases like: "it is important to note," "delve into," "landscape," "ecosystem," "paradigm"
+- Perfect grammar with no typos or informal language
+- Overly balanced structure (every paragraph same length)
+- Formal academic tone even for casual topics
+- Lists with exactly 3-5 bullet points
+- Lack of personal anecdotes or specific examples
+- No contractions (isn't, don't, can't)
+- Repetitive sentence starters
+- Generic conclusions ("In conclusion," "To summarize")
 
-Text to analyze:
+⚠️ MEDIUM AI INDICATORS (if present, likely 50-79% AI):
+- Consistent sentence length throughout
+- Overuse of words like: "robust," "comprehensive," "leverage," "optimize"
+- Too coherent (no tangents or informal asides)
+- Lack of emotion or personality
+- Formulaic structure
+
+✅ HUMAN INDICATORS (if present, likely <50% AI):
+- Typos, grammar errors, run-on sentences
+- Contractions and colloquialisms
+- Personal opinions or experiences ("I think," "In my experience")
+- Varied sentence lengths (short and long mixed)
+- Emotional language or humor
+- Informal phrases ("you know," "kind of," "basically")
+- Specific concrete examples (not generic)
+- Natural tangents or digressions
+
+SCORING GUIDELINES:
+- 90-100%: Definitely AI (multiple strong indicators)
+- 70-89%: Very likely AI (several indicators)
+- 50-69%: Probably AI (some indicators)
+- 30-49%: Likely human (few AI signs)
+- 0-29%: Definitely human (clear human markers)
+
+Analyze this text and be STRICT in your judgment:
+
 """
 ${text}
 """
 
-Respond ONLY with the JSON object, no other text.`
+Return your analysis in this EXACT JSON format:
+{
+  "isAI": true/false,
+  "confidence": <number 0-100>,
+  "reasoning": "<detailed explanation of why you think it's AI or human>",
+  "keyIndicators": ["<specific phrase or pattern found>", "<another indicator>", ...]
+}
+
+BE HARSH. If you see AI patterns, call them out. Respond ONLY with the JSON object.`
         }]
       });
 
@@ -146,14 +244,14 @@ Respond ONLY with the JSON object, no other text.`
       repetitionScore: this.analyzeRepetition(text)
     };
 
-    // Weighted average of all scores
+    // Weighted average of all scores (INCREASED FOR BETTER DETECTION)
     const weights = {
-      phraseScore: 0.25,
-      structureScore: 0.20,
-      vocabularyScore: 0.15,
-      formalityScore: 0.15,
-      coherenceScore: 0.15,
-      repetitionScore: 0.10
+      phraseScore: 0.35,      // AI phrases are a STRONG indicator (increased from 0.25)
+      structureScore: 0.25,   // Sentence structure matters (increased from 0.20)
+      formalityScore: 0.20,   // Formality is key (increased from 0.15)
+      vocabularyScore: 0.10,  // Vocabulary helps (decreased from 0.15)
+      coherenceScore: 0.05,   // Less important (decreased from 0.15)
+      repetitionScore: 0.05   // Less important (decreased from 0.10)
     };
 
     let totalScore = 0;
@@ -217,9 +315,19 @@ Respond ONLY with the JSON object, no other text.`
       }
     }
 
-    // Calculate percentage of AI phrases found
+    // Calculate percentage of AI phrases found and AMPLIFY IT
     const percentage = (matchCount / this.aiPhrases.length) * 100;
-    return Math.min(percentage * 3, 100); // Amplify the score
+    let score = Math.min(percentage * 6, 100); // Increased from 3 to 6 for more sensitivity
+
+    // BONUS: If multiple AI phrases found, boost the score even more
+    if (matchCount >= 3) {
+      score = Math.min(score + 20, 100); // +20 bonus for 3+ phrases
+    }
+    if (matchCount >= 5) {
+      score = Math.min(score + 15, 100); // Additional +15 for 5+ phrases
+    }
+
+    return score;
   }
 
   analyzeSentenceStructure(text) {
