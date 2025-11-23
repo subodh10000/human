@@ -1,10 +1,14 @@
 /**
  * AI Text Detection Module
  * Analyzes text for AI-generated patterns with multi-factor analysis
+ * Supports both Claude API-based detection and pattern-based fallback
  */
 
 class AITextDetector {
-  constructor() {
+  constructor(anthropicClient = null) {
+    this.anthropic = anthropicClient;
+    this.model = process.env.CLAUDE_MODEL || 'claude-sonnet-4-5-20250929';
+    this.enableFallback = process.env.ENABLE_FALLBACK !== 'false';
     // Common AI phrases and patterns
     this.aiPhrases = [
       'it is important to note',
@@ -52,11 +56,78 @@ class AITextDetector {
   }
 
   /**
-   * Main detection function
+   * Claude API-based detection (most accurate)
    * @param {string} text - Text to analyze
    * @returns {Object} - Detection results with confidence score
    */
-  detect(text) {
+  async detectWithClaude(text) {
+    if (!this.anthropic) {
+      throw new Error('Claude API client not initialized');
+    }
+
+    try {
+      const message = await this.anthropic.messages.create({
+        model: this.model,
+        max_tokens: 1024,
+        messages: [{
+          role: 'user',
+          content: `Analyze the following text and determine if it was written by AI or a human.
+
+Consider these factors:
+- Writing style and tone
+- Sentence structure patterns
+- Vocabulary choices
+- Natural imperfections or lack thereof
+- Common AI phrases and patterns
+- Coherence and flow
+
+Provide your analysis in this exact JSON format:
+{
+  "isAI": true/false,
+  "confidence": <number 0-100>,
+  "reasoning": "<brief explanation>",
+  "keyIndicators": ["<indicator1>", "<indicator2>", ...]
+}
+
+Text to analyze:
+"""
+${text}
+"""
+
+Respond ONLY with the JSON object, no other text.`
+        }]
+      });
+
+      const responseText = message.content[0].text;
+      const analysis = JSON.parse(responseText);
+
+      return {
+        isAI: analysis.isAI,
+        confidence: analysis.confidence,
+        score: analysis.confidence,
+        details: {
+          reasoning: analysis.reasoning,
+          keyIndicators: analysis.keyIndicators
+        },
+        analysis: analysis.reasoning,
+        method: 'claude-api'
+      };
+    } catch (error) {
+      console.error('Claude API detection error:', error.message);
+      if (this.enableFallback) {
+        console.log('Falling back to pattern-based detection');
+        return this.detectWithPatterns(text);
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Pattern-based detection (fallback method)
+   * @param {string} text - Text to analyze
+   * @returns {Object} - Detection results with confidence score
+   */
+  detectWithPatterns(text) {
     if (!text || text.trim().length < 50) {
       return {
         isAI: false,
@@ -98,8 +169,42 @@ class AITextDetector {
       confidence,
       score: totalScore,
       details: scores,
-      analysis: this.generateAnalysis(scores, confidence)
+      analysis: this.generateAnalysis(scores, confidence),
+      method: 'pattern-based'
     };
+  }
+
+  /**
+   * Main detection function - uses Claude API if available, falls back to patterns
+   * @param {string} text - Text to analyze
+   * @returns {Object} - Detection results with confidence score
+   */
+  async detect(text) {
+    if (!text || text.trim().length < 50) {
+      return {
+        isAI: false,
+        confidence: 0,
+        score: 0,
+        details: 'Text too short for accurate analysis',
+        method: 'none'
+      };
+    }
+
+    // Use Claude API if available
+    if (this.anthropic) {
+      try {
+        return await this.detectWithClaude(text);
+      } catch (error) {
+        console.error('Detection error:', error.message);
+        if (this.enableFallback) {
+          return this.detectWithPatterns(text);
+        }
+        throw error;
+      }
+    }
+
+    // Fall back to pattern-based detection
+    return this.detectWithPatterns(text);
   }
 
   analyzePhrases(text) {

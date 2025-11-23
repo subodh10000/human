@@ -1,10 +1,14 @@
 /**
  * AI to Human Text Converter Module
  * Converts AI-generated text to more natural, human-like writing
+ * Supports both Claude API-based conversion and pattern-based fallback
  */
 
 class AIToHumanConverter {
-  constructor() {
+  constructor(anthropicClient = null) {
+    this.anthropic = anthropicClient;
+    this.model = process.env.CLAUDE_MODEL || 'claude-sonnet-4-5-20250929';
+    this.enableFallback = process.env.ENABLE_FALLBACK !== 'false';
     // Replacement mappings for common AI phrases
     this.phraseReplacements = {
       'it is important to note': ['worth mentioning', 'keep in mind', 'remember', 'note that'],
@@ -61,12 +65,89 @@ class AIToHumanConverter {
   }
 
   /**
-   * Main conversion function
+   * Claude API-based conversion (most accurate and natural)
    * @param {string} text - AI-generated text to convert
    * @param {number} intensity - Conversion intensity (1-10)
    * @returns {Object} - Converted text with metadata
    */
-  convert(text, intensity = 7) {
+  async convertWithClaude(text, intensity = 7) {
+    if (!this.anthropic) {
+      throw new Error('Claude API client not initialized');
+    }
+
+    const intensityDescriptions = {
+      1: 'minimal changes, keep it very formal and professional',
+      2: 'slight humanization, mostly formal',
+      3: 'light humanization, professional tone',
+      4: 'moderate humanization, balanced',
+      5: 'noticeable humanization, friendly tone',
+      6: 'strong humanization, conversational',
+      7: 'very natural, casual and conversational',
+      8: 'highly casual, very human-like',
+      9: 'extremely casual, informal',
+      10: 'maximum casualness, very relaxed and informal'
+    };
+
+    try {
+      const message = await this.anthropic.messages.create({
+        model: this.model,
+        max_tokens: 4096,
+        messages: [{
+          role: 'user',
+          content: `Rewrite the following text to sound more natural and human-written, NOT AI-generated.
+
+Intensity level: ${intensity}/10 (${intensityDescriptions[intensity]})
+
+Guidelines for humanization:
+- Replace formal AI phrases with casual, natural language
+- Add contractions (it's, don't, can't, etc.)
+- Vary sentence structure and length
+- Use simpler, more conversational vocabulary
+- Add natural flow and rhythm
+- Remove overly perfect grammar where appropriate
+- Make it sound like a real person wrote it
+- At higher intensities, add more personality and casual expressions
+- Keep the core meaning and information intact
+
+Original text:
+"""
+${text}
+"""
+
+Respond with ONLY the humanized text, no explanations or meta-commentary.`
+        }]
+      });
+
+      const convertedText = message.content[0].text.trim();
+
+      // Calculate changes (approximate)
+      const changes = this.calculateChanges(text, convertedText);
+
+      return {
+        original: text,
+        converted: convertedText,
+        changes,
+        success: true,
+        humanization: Math.min(85 + intensity * 1.3, 98),
+        method: 'claude-api'
+      };
+    } catch (error) {
+      console.error('Claude API conversion error:', error.message);
+      if (this.enableFallback) {
+        console.log('Falling back to pattern-based conversion');
+        return this.convertWithPatterns(text, intensity);
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Pattern-based conversion (fallback method)
+   * @param {string} text - AI-generated text to convert
+   * @param {number} intensity - Conversion intensity (1-10)
+   * @returns {Object} - Converted text with metadata
+   */
+  convertWithPatterns(text, intensity = 7) {
     if (!text || text.trim().length === 0) {
       return {
         original: text,
@@ -123,8 +204,65 @@ class AIToHumanConverter {
       converted: convertedText,
       changes,
       success: true,
-      humanization: Math.min((changes / text.length) * 1000 + 85, 98) // Calculate humanization percentage
+      humanization: Math.min((changes / text.length) * 1000 + 85, 98),
+      method: 'pattern-based'
     };
+  }
+
+  /**
+   * Main conversion function - uses Claude API if available, falls back to patterns
+   * @param {string} text - AI-generated text to convert
+   * @param {number} intensity - Conversion intensity (1-10)
+   * @returns {Object} - Converted text with metadata
+   */
+  async convert(text, intensity = 7) {
+    if (!text || text.trim().length === 0) {
+      return {
+        original: text,
+        converted: text,
+        changes: 0,
+        success: false,
+        method: 'none'
+      };
+    }
+
+    // Use Claude API if available
+    if (this.anthropic) {
+      try {
+        return await this.convertWithClaude(text, intensity);
+      } catch (error) {
+        console.error('Conversion error:', error.message);
+        if (this.enableFallback) {
+          return this.convertWithPatterns(text, intensity);
+        }
+        throw error;
+      }
+    }
+
+    // Fall back to pattern-based conversion
+    return this.convertWithPatterns(text, intensity);
+  }
+
+  /**
+   * Calculate approximate number of changes between two texts
+   * @param {string} original - Original text
+   * @param {string} converted - Converted text
+   * @returns {number} - Approximate number of changes
+   */
+  calculateChanges(original, converted) {
+    const origWords = original.toLowerCase().split(/\s+/);
+    const convWords = converted.toLowerCase().split(/\s+/);
+
+    let changes = 0;
+    const maxLen = Math.max(origWords.length, convWords.length);
+
+    for (let i = 0; i < maxLen; i++) {
+      if (origWords[i] !== convWords[i]) {
+        changes++;
+      }
+    }
+
+    return changes;
   }
 
   replaceFormalPhrases(text, intensity) {

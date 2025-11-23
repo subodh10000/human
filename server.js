@@ -3,19 +3,38 @@
  * Express API server for AI text detection and conversion
  */
 
+require('dotenv').config();
+
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const path = require('path');
+const Anthropic = require('@anthropic-ai/sdk');
 const AITextDetector = require('./detector');
 const AIToHumanConverter = require('./converter');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Initialize detector and converter
-const detector = new AITextDetector();
-const converter = new AIToHumanConverter();
+// Initialize Anthropic client if API key is available
+let anthropic = null;
+if (process.env.ANTHROPIC_API_KEY) {
+  try {
+    anthropic = new Anthropic({
+      apiKey: process.env.ANTHROPIC_API_KEY
+    });
+    console.log('✅ Claude API initialized successfully');
+  } catch (error) {
+    console.error('❌ Failed to initialize Claude API:', error.message);
+  }
+} else {
+  console.log('⚠️  No ANTHROPIC_API_KEY found - using pattern-based detection only');
+  console.log('   Set up your API key in .env file for enhanced accuracy');
+}
+
+// Initialize detector and converter with Anthropic client
+const detector = new AITextDetector(anthropic);
+const converter = new AIToHumanConverter(anthropic);
 
 // Middleware
 app.use(cors());
@@ -34,7 +53,7 @@ app.get('/', (req, res) => {
  * POST /api/detect
  * Analyzes text for AI-generated patterns
  */
-app.post('/api/detect', (req, res) => {
+app.post('/api/detect', async (req, res) => {
   try {
     const { text } = req.body;
 
@@ -52,7 +71,7 @@ app.post('/api/detect', (req, res) => {
       });
     }
 
-    const result = detector.detect(text);
+    const result = await detector.detect(text);
 
     res.json({
       success: true,
@@ -72,7 +91,7 @@ app.post('/api/detect', (req, res) => {
  * POST /api/convert
  * Converts AI-generated text to human-like text
  */
-app.post('/api/convert', (req, res) => {
+app.post('/api/convert', async (req, res) => {
   try {
     const { text, intensity = 7 } = req.body;
 
@@ -98,7 +117,7 @@ app.post('/api/convert', (req, res) => {
       });
     }
 
-    const result = converter.convert(text, parsedIntensity);
+    const result = await converter.convert(text, parsedIntensity);
 
     res.json({
       success: true,
@@ -118,7 +137,7 @@ app.post('/api/convert', (req, res) => {
  * POST /api/process
  * Combined endpoint: detect and convert in one call
  */
-app.post('/api/process', (req, res) => {
+app.post('/api/process', async (req, res) => {
   try {
     const { text, intensity = 7 } = req.body;
 
@@ -137,13 +156,13 @@ app.post('/api/process', (req, res) => {
     }
 
     // First detect
-    const detection = detector.detect(text);
+    const detection = await detector.detect(text);
 
     // Then convert
-    const conversion = converter.convert(text, parseInt(intensity));
+    const conversion = await converter.convert(text, parseInt(intensity));
 
     // Detect the converted text to show improvement
-    const convertedDetection = detector.detect(conversion.converted);
+    const convertedDetection = await detector.detect(conversion.converted);
 
     res.json({
       success: true,
